@@ -3,7 +3,7 @@ import sys
 from collections import defaultdict
 from collections import deque
 
-"""A script to order the stops of multiple routes in a linear order."""
+"""A script to sort the vertices in a connected directed graph in a linear order."""
 
 
 def linearize_multiple_routes(stops_without_predecessors, successors_per_stop, predecessors_per_stop):
