@@ -2,6 +2,8 @@ from collections import defaultdict
 
 import math
 
+"""A script for calibrating trip-in-trip-out-matrices to section volumes by distance minimization."""
+
 
 class TripInTripOutMatrix(defaultdict):
     def __init__(self, dim):
