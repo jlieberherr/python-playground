@@ -3,10 +3,10 @@ import sys
 from collections import defaultdict
 from collections import deque
 
-"""A script to sort the vertices in a connected directed graph in a linear order."""
+"""A script to sort the vertices in a connected directed acyclic graph in a linear order."""
 
 
-def linearize_multiple_routes(stops_without_predecessors, successors_per_stop, predecessors_per_stop):
+def linearize_stops_in_multiple_routes(successors_per_stop):
     """
     Sorts the stops (vertices) in a linear order.
 
@@ -15,28 +15,26 @@ def linearize_multiple_routes(stops_without_predecessors, successors_per_stop, p
         - The undirected graph must be connected.
 
     Args:
-        stops_without_predecessors (set): set of stops without predecessors.
         successors_per_stop (dict): set of successors per stop.
-        predecessors_per_stop (dict): set of predecessors per stop.
 
     Returns:
         (dict) sort index per stop.
     """
 
+    predecessors_per_stop = {s: set() for s in successors_per_stop}
+    for s, sucs in successors_per_stop.iteritems():
+        for suc in sucs:
+            preds_so_far = predecessors_per_stop.get(suc, set())
+            preds_so_far.add(s)
+            predecessors_per_stop[suc] = preds_so_far
+
+    stops_without_predecessors = {s for (s, preds) in predecessors_per_stop.iteritems() if len(preds) == 0}
+
     print "stops without predecessors: {}".format(stops_without_predecessors)
 
-    # some consistency checks
-    for key, value in successors_per_stop.iteritems():
-        for s in value:
-            assert key in predecessors_per_stop[s]
+    all_stops = successors_per_stop.keys()
 
-    for key, value in predecessors_per_stop.iteritems():
-        for p in value:
-            assert key in successors_per_stop[p]
-
-    all_stops = stops_without_predecessors.union(successors_per_stop.keys()).union(predecessors_per_stop.keys())
-
-    # assure that there are no loops
+    # assure that there are no direct loops; we do not assure that there are no loops at all!
     for _stop in all_stops:
         if _stop in predecessors_per_stop.keys() and _stop in successors_per_stop.keys():
             intersection = set.intersection(predecessors_per_stop[_stop], successors_per_stop[_stop])
@@ -73,7 +71,7 @@ def linearize_multiple_routes(stops_without_predecessors, successors_per_stop, p
     return sort_index_per_stop
 
 
-def get_data_from_file(path_in):
+def get_successors_per_stop_from_file(path_in):
     """Extracts the data from a file, which can be produce for example by the timeprofileitem list in Visum."""
     list_per_id = defaultdict(list)
     with open(path_in) as f:
@@ -91,21 +89,15 @@ def get_data_from_file(path_in):
     for a_list in list_per_id.values():
         all_stops = all_stops.union(set(a_list))
     print "nb stops: {}".format(len(all_stops))
-    predecessors_list = defaultdict(list)
-    successors_list = defaultdict(list)
+    successors_list = {s: [] for s in all_stops}
     for a_list in list_per_id.values():
         for i in range(len(a_list)):
-            before = a_list[i - 1] if i > 0 else None
             now = a_list[i]
             after = a_list[i + 1] if i < len(a_list) - 1 else None
-            if before:
-                predecessors_list[now] += [before]
             if after:
                 successors_list[now] += [after]
-    predecessors_per_stop = defaultdict(set, {k: set(l) for k, l in predecessors_list.iteritems()})
-    successors_per_stop = defaultdict(set, {k: set(l) for k, l in successors_list.iteritems()})
-    stops_without_predecessors = all_stops.difference(predecessors_per_stop.keys())
-    return stops_without_predecessors, successors_per_stop, predecessors_per_stop
+    successors_per_stop = defaultdict(set, {s: set(l) for s, l in successors_list.iteritems()})
+    return successors_per_stop
 
 
 if __name__ == "__main__":
@@ -113,10 +105,10 @@ if __name__ == "__main__":
     _path_in = sys.argv[1]
     _path_out = sys.argv[2]
 
-    _sort_index_per_stop = linearize_multiple_routes(*get_data_from_file(_path_in))
+    _sort_index_per_stop = linearize_stops_in_multiple_routes(get_successors_per_stop_from_file(_path_in))
 
-    with open(_path_out, "wb") as f:
-        writer = csv.writer(f, delimiter=";")
+    with open(_path_out, "wb") as _f:
+        writer = csv.writer(_f, delimiter=";")
         writer.writerow(["index_sorted", "stop"])
         for k, v in sorted(_sort_index_per_stop.iteritems(), key=lambda x: x[1]):
             writer.writerow([v, k])
