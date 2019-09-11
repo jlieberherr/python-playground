@@ -8,7 +8,7 @@ from collections import deque
 
 def linearize_multiple_routes(stops_without_predecessors, successors_per_stop, predecessors_per_stop):
     """
-    Sorts the stops in a linear order.
+    Sorts the stops (vertices) in a linear order.
 
     Restrictions:
         - Loops are not allowed.
