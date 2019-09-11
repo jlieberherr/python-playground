@@ -4,7 +4,7 @@ from scripts.inoutcalibration import TripInTripOutMatrix, create_alpha, create_b
     get_orthonormal_basis_of_normal_space, get_trivial_solution
 
 
-class TestTripinTripOutCalibration(unittest.TestCase):
+class TripinTripOutCalibrationTest(unittest.TestCase):
     def test_nonzero_entries(self):
         dim = 3
         m_1 = TripInTripOutMatrix(dim)
